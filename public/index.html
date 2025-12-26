@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TikFinity Live – iPhone</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, system-ui, sans-serif;
+      background: #0f0f0f;
+      color: #ffffff;
+    }
+
+    header {
+      padding: 16px;
+      background: #111;
+      font-weight: bold;
+      text-align: center;
+      border-bottom: 1px solid #222;
+    }
+
+    button {
+      margin: 12px;
+      padding: 14px;
+      width: calc(100% - 24px);
+      border-radius: 14px;
+      border: none;
+      background: #1db954;
+      color: #000;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    #log {
+      padding: 12px;
+      font-size: 14px;
+      white-space: pre-wrap;
+      max-height: 60vh;
+      overflow-y: auto;
+      background: #000;
+    }
+
+    .event {
+      margin-bottom: 6px;
+      border-bottom: 1px solid #222;
+      padding-bottom: 6px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>🎥 TikFinity Live – Web-App</header>
+
+  <button id="enableAudio">🔊 Audio & TTS aktivieren</button>
+
+  <div id="log"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const logEl = document.getElementById("log");
+    const audioBtn = document.getElementById("enableAudio");
+    let audioEnabled = false;
+
+    function log(text) {
+      const div = document.createElement("div");
+      div.className = "event";
+      div.textContent = text;
+      logEl.prepend(div);
+    }
+
+    audioBtn.onclick = () => {
+      audioEnabled = true;
+      const u = new SpeechSynthesisUtterance("Audio ist jetzt aktiviert");
+      u.lang = "de-DE";
+      speechSynthesis.speak(u);
+      audioBtn.textContent = "✅ Audio & TTS aktiv";
+    };
+
+    const socket = io();
+
+    socket.on("event", data => {
+      const { type, payload } = data;
+
+      if (type === "chat") {
+        log(`💬 ${payload.name}: ${payload.text}`);
+      }
+
+      if (type === "gift") {
+        log(`🎁 ${payload.name} → ${payload.gift} x${payload.count}`);
+
+        if (audioEnabled) {
+          const u = new SpeechSynthesisUtterance(
+            `Danke ${payload.name} für ${payload.gift}`
+          );
+          u.lang = "de-DE";
+          speechSynthesis.cancel();
+          speechSynthesis.speak(u);
+        }
+      }
+
+      if (type === "follow") {
+        log(`➕ Follow: ${payload.name}`);
+      }
+
+      if (type === "like") {
+        log(`❤️ Likes: ${payload.totalLikes}`);
+      }
+    });
+  </script>
+</body>
+</html>
