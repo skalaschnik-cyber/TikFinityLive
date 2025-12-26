@@ -1,113 +1,159 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TikFinity Live – iPhone</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TikFinity Live – Web-App</title>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: -apple-system, system-ui, sans-serif;
-      background: #0f0f0f;
-      color: #ffffff;
-    }
-
-    header {
-      padding: 16px;
-      background: #111;
-      font-weight: bold;
-      text-align: center;
-      border-bottom: 1px solid #222;
-    }
-
-    button {
-      margin: 12px;
-      padding: 14px;
-      width: calc(100% - 24px);
-      border-radius: 14px;
-      border: none;
-      background: #1db954;
-      color: #000;
-      font-size: 16px;
-      font-weight: bold;
-    }
-
-    #log {
-      padding: 12px;
-      font-size: 14px;
-      white-space: pre-wrap;
-      max-height: 60vh;
-      overflow-y: auto;
-      background: #000;
-    }
-
-    .event {
-      margin-bottom: 6px;
-      border-bottom: 1px solid #222;
-      padding-bottom: 6px;
-    }
-  </style>
+<style>
+:root { color-scheme: dark; }
+body {
+  margin:0;
+  font-family:-apple-system,system-ui,sans-serif;
+  background:#0f0f0f;
+  color:#fff;
+}
+header {
+  padding:14px 16px;
+  background:#111;
+  border-bottom:1px solid #222;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+h3 { margin:0 0 10px 0; }
+button {
+  border:none;
+  border-radius:14px;
+  padding:12px 14px;
+  font-weight:800;
+  background:#1db954;
+  color:#000;
+}
+button.secondary {
+  background:#2a2a2a;
+  color:#fff;
+}
+.card {
+  background:#111;
+  border:1px solid #222;
+  border-radius:16px;
+  padding:12px;
+  margin-bottom:12px;
+}
+.wrap {
+  padding:12px;
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:12px;
+}
+@media (min-width: 900px){
+  .wrap { grid-template-columns: 420px 1fr; }
+}
+input, select {
+  width:100%;
+  padding:10px;
+  border-radius:12px;
+  border:1px solid #2a2a2a;
+  background:#0b0b0b;
+  color:#fff;
+}
+label {
+  font-size:12px;
+  color:#bbb;
+}
+#log {
+  background:#000;
+  border-radius:12px;
+  border:1px solid #222;
+  padding:10px;
+  height:260px;
+  overflow:auto;
+  font-size:13px;
+}
+</style>
 </head>
 
 <body>
-  <header>🎥 TikFinity Live – Web-App</header>
 
-  <button id="enableAudio">🔊 Audio & TTS aktivieren</button>
+<header>
+  <b>🎥 TikFinity Live – Web-App</b>
+  <button id="enableAudio" class="secondary">🔊 Audio & TTS aktivieren</button>
+</header>
 
-  <div id="log"></div>
+<div class="wrap">
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const logEl = document.getElementById("log");
-    const audioBtn = document.getElementById("enableAudio");
-    let audioEnabled = false;
+  <div>
+    <div class="card">
+      <h3>⚙️ Einstellungen</h3>
 
-    function log(text) {
-      const div = document.createElement("div");
-      div.className = "event";
-      div.textContent = text;
-      logEl.prepend(div);
-    }
+      <label>TTS aktiv</label>
+      <select id="ttsEnabled">
+        <option value="1">An</option>
+        <option value="0">Aus</option>
+      </select>
 
-    audioBtn.onclick = () => {
-      audioEnabled = true;
-      const u = new SpeechSynthesisUtterance("Audio ist jetzt aktiviert");
-      u.lang = "de-DE";
-      speechSynthesis.speak(u);
-      audioBtn.textContent = "✅ Audio & TTS aktiv";
-    };
+      <label style="margin-top:8px;">Sprache</label>
+      <select id="ttsLang">
+        <option value="de-DE">Deutsch</option>
+        <option value="en-US">English</option>
+        <option value="tr-TR">Türkçe</option>
+      </select>
 
-    const socket = io();
+      <label style="margin-top:8px;">Cooldown (ms)</label>
+      <input type="number" id="ttsCooldown" value="1200">
 
-    socket.on("event", data => {
-      const { type, payload } = data;
+      <button style="margin-top:10px;" onclick="testTTS()">🧪 TTS testen</button>
+    </div>
 
-      if (type === "chat") {
-        log(`💬 ${payload.name}: ${payload.text}`);
-      }
+    <div class="card">
+      <h3>🎯 Goals</h3>
+      <label>Gifts Ziel</label>
+      <input type="number" value="100">
+      <label style="margin-top:6px;">Likes Ziel</label>
+      <input type="number" value="5000">
+    </div>
+  </div>
 
-      if (type === "gift") {
-        log(`🎁 ${payload.name} → ${payload.gift} x${payload.count}`);
+  <div>
+    <div class="card">
+      <h3>🎁 Gift-Regeln (Demo)</h3>
+      <p style="font-size:13px;color:#aaa;">
+        Hier kommen als Nächstes:
+        Gift → Sound → TTS → Cooldown
+      </p>
+      <button class="secondary">➕ Regel hinzufügen</button>
+    </div>
 
-        if (audioEnabled) {
-          const u = new SpeechSynthesisUtterance(
-            `Danke ${payload.name} für ${payload.gift}`
-          );
-          u.lang = "de-DE";
-          speechSynthesis.cancel();
-          speechSynthesis.speak(u);
-        }
-      }
+    <div class="card">
+      <h3>📜 Live-Log</h3>
+      <div id="log">Bereit…</div>
+    </div>
+  </div>
 
-      if (type === "follow") {
-        log(`➕ Follow: ${payload.name}`);
-      }
+</div>
 
-      if (type === "like") {
-        log(`❤️ Likes: ${payload.totalLikes}`);
-      }
-    });
-  </script>
+<script>
+let audioEnabled = false;
+
+document.getElementById("enableAudio").onclick = () => {
+  audioEnabled = true;
+  alert("Audio & TTS aktiviert (iOS erlaubt jetzt Sound)");
+};
+
+function testTTS(){
+  if(!audioEnabled){
+    alert("Bitte zuerst Audio aktivieren");
+    return;
+  }
+  const text = "TikFinity Test erfolgreich";
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = document.getElementById("ttsLang").value;
+  speechSynthesis.speak(msg);
+
+  document.getElementById("log").innerHTML += "\\n🗣️ TTS: " + text;
+}
+</script>
+
 </body>
 </html>
